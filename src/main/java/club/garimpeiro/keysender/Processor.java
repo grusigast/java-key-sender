@@ -7,7 +7,27 @@ import java.awt.event.KeyEvent;
 import java.util.OptionalLong;
 import java.util.stream.IntStream;
 
+import com.sun.jna.Native;
+import com.sun.jna.platform.win32.WinDef.HWND;
+import com.sun.jna.win32.W32APIOptions;
+
+
 public class Processor {
+
+        public interface User32 extends W32APIOptions {
+
+        User32 instance = (User32) Native.loadLibrary("user32", User32.class,
+                DEFAULT_OPTIONS);
+
+
+        boolean ShowWindow(HWND hWnd, int nCmdShow);
+
+        boolean SetForegroundWindow(HWND hWnd);
+
+        HWND FindWindow(String winClass, String title);
+
+        int SW_SHOW = 1;
+    }
 
     protected CommandLine cmd;
     protected static Robot robot;
@@ -24,44 +44,57 @@ public class Processor {
 
     public void process() {
         try {
-            String pdelay = cmd.getOptionValue("pdelay");
-            String sdelay = cmd.getOptionValue("sdelay");
-            String delay = cmd.getOptionValue("delay");
 
-            if (pdelay != null) {
-                robot.setAutoDelay(Integer.parseInt(pdelay));
-            }
+            String windowfocus = cmd.getOptionValue("focus");
+            if (windowfocus != null) {
+                setWindowFocus(windowfocus);
+            } else {
+                String pdelay = cmd.getOptionValue("pdelay");
+                String sdelay = cmd.getOptionValue("sdelay");
+                String delay = cmd.getOptionValue("delay");
 
-            if (sdelay != null) {
-                robot.delay(Integer.parseInt(sdelay));
-            }
-
-            for (String arg: cmd.getArgList()) {
-                int localDelay = getDelayArgument(arg);
-                String keyArg = getKeyArgument(arg);
-                Boolean isUp = getUpArgument(arg);
-                Boolean isDown = getDownArgument(arg);
-
-                Boolean hold = true;
-                Boolean release = true;
-                if (isUp || isDown) {
-                    hold = isDown;
-                    release = isUp;
+                if (pdelay != null) {
+                    robot.setAutoDelay(Integer.parseInt(pdelay));
                 }
 
-                if (arg.contains("-")) {
-                    processCombination(keyArg, hold, release);
-                } else {
-                    processKey(keyArg, hold, release);
+                if (sdelay != null) {
+                    robot.delay(Integer.parseInt(sdelay));
                 }
 
-                if (delay != null || localDelay != 0) {
-                    robot.delay(localDelay != 0 ? localDelay : Integer.parseInt(delay));
+                for (String arg: cmd.getArgList()) {
+                    int localDelay = getDelayArgument(arg);
+                    String keyArg = getKeyArgument(arg);
+                    Boolean isUp = getUpArgument(arg);
+                    Boolean isDown = getDownArgument(arg);
+
+                    Boolean hold = true;
+                    Boolean release = true;
+                    if (isUp || isDown) {
+                        hold = isDown;
+                        release = isUp;
+                    }
+
+                    if (arg.contains("-")) {
+                        processCombination(keyArg, hold, release);
+                    } else {
+                        processKey(keyArg, hold, release);
+                    }
+
+                    if (delay != null || localDelay != 0) {
+                        robot.delay(localDelay != 0 ? localDelay : Integer.parseInt(delay));
+                    }
                 }
             }
         }  catch (Exception e) {
 
         }
+    }
+
+    protected void setWindowFocus(String arg) {
+        User32 user32 = User32.instance;  
+        HWND hWnd = user32.FindWindow(null, arg); // Sets focus to my opened 'Downloads' folder
+        user32.ShowWindow(hWnd, User32.SW_SHOW);  
+        user32.SetForegroundWindow(hWnd);  
     }
 
     protected String getKeyArgument(String arg) {

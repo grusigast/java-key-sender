@@ -45,6 +45,7 @@ public class ArgsParser {
         options.addOption("pd", "pdelay", true, "Global key press delay (in milliseconds)");
         options.addOption("c", "case-correction", true, "Case correction (1=on, 0=off, default=on)");
         options.addOption("sd", "sdelay", true, "Start with delay (in milliseconds)");
+        options.addOption("f", "focus", true, "Window to focus");
 
         return options;
     }
